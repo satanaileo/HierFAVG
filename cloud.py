@@ -4,7 +4,11 @@
 # 2. Server reveives updates from the user
 # 3. Server send the aggregated information back to clients
 import copy
+
+import torch.nn
+
 from average import average_weights
+
 
 class Cloud():
 
@@ -41,4 +45,3 @@ class Cloud():
     def send_to_edge(self, edge):
         edge.receive_from_cloudserver(copy.deepcopy(self.shared_state_dict))
         return None
-
