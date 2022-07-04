@@ -18,7 +18,6 @@ from torch.autograd import Variable
 from tqdm import tqdm
 
 
-
 class MTL_Model(object):
     def __init__(self, shared_layers, specific_layers, learning_rate, lr_decay, lr_decay_epoch, momentum, weight_decay):
         self.shared_layers = shared_layers
@@ -28,21 +27,21 @@ class MTL_Model(object):
         self.lr_decay_epoch = lr_decay_epoch
         self.momentum = momentum
         self.weight_decay = weight_decay
-    #   construct the parameter
+        #   construct the parameter
         param_dict = [{"params": self.shared_layers.parameters()}]
         if self.specific_layers:
             param_dict += [{"params": self.specific_layers.parameters()}]
-        self.optimizer = optim.SGD(params = param_dict,
-                                  lr = learning_rate,
-                                  momentum = momentum,
-                                  weight_decay=weight_decay)
+        self.optimizer = optim.SGD(params=param_dict,
+                                   lr=learning_rate,
+                                   momentum=momentum,
+                                   weight_decay=weight_decay)
         self.optimizer_state_dict = self.optimizer.state_dict()
         self.criterion = nn.CrossEntropyLoss()
 
     def exp_lr_sheduler(self, epoch):
         """"""
 
-        if  (epoch + 1) % self.lr_decay_epoch:
+        if (epoch + 1) % self.lr_decay_epoch:
             return None
         for param_group in self.optimizer.param_groups:
             # print(f'epoch{epoch}')
@@ -95,6 +94,7 @@ class MTL_Model(object):
     def update_model(self, new_shared_layers):
         self.shared_layers.load_state_dict(new_shared_layers)
 
+
 def initialize_model(args, device):
     if args.mtl_model:
         print('Using different task specific layer for each user')
@@ -124,26 +124,28 @@ def initialize_model(args, device):
                 raise ValueError('Model not implemented for CIFAR-10')
         elif args.dataset == 'mnist':
             if args.model == 'lenet':
-               shared_layers = mnist_lenet(input_channels=1, output_channels=10)
-               specific_layers = None
+                shared_layers = mnist_lenet(input_channels=1, output_channels=10)
+                specific_layers = None
             elif args.model == 'logistic':
-               shared_layers = LogisticRegression(input_dim=1, output_dim=10)
-               specific_layers = None
+                shared_layers = LogisticRegression(input_dim=1, output_dim=10)
+                specific_layers = None
             else:
                 raise ValueError('Model not implemented for MNIST')
         else:
             raise ValueError('The dataset is not implemented for mtl yet')
         if args.cuda:
             shared_layers = shared_layers.cuda(device)
-    else: raise ValueError('Wrong input for the --mtl_model and --global_model, only one is valid')
-    model = MTL_Model(shared_layers = shared_layers,
-                      specific_layers = specific_layers,
-                      learning_rate= args.lr,
-                      lr_decay= args.lr_decay,
-                      lr_decay_epoch= args.lr_decay_epoch,
-                      momentum= args.momentum,
-                      weight_decay = args.weight_decay)
+    else:
+        raise ValueError('Wrong input for the --mtl_model and --global_model, only one is valid')
+    model = MTL_Model(shared_layers=shared_layers,
+                      specific_layers=specific_layers,
+                      learning_rate=args.lr,
+                      lr_decay=args.lr_decay,
+                      lr_decay_epoch=args.lr_decay_epoch,
+                      momentum=args.momentum,
+                      weight_decay=args.weight_decay)
     return model
+
 
 def main():
     """
@@ -189,8 +191,8 @@ def main():
             inputs, labels = data
             inputs = Variable(inputs).to(device)
             labels = Variable(labels).to(device)
-            loss = model.optimize_model(input_batch= inputs,
-                                        label_batch= labels)
+            loss = model.optimize_model(input_batch=inputs,
+                                        label_batch=labels)
 
             # print statistics
             running_loss += loss
@@ -205,13 +207,14 @@ def main():
     with torch.no_grad():
         for data in testloader:
             images, labels = data
-            outputs = model.test_model(input_batch= images)
+            outputs = model.test_model(input_batch=images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
     print('Accuracy of the network on the 10000 test images: %d %%' % (
             100 * correct / total))
+
 
 if __name__ == '__main__':
     main()

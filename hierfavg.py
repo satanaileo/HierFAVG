@@ -158,7 +158,7 @@ def initialize_edges_niid(num_edges, clients, args, client_class_dis):
 
 
 def all_clients_test(server, clients, cids, device):
-    [server.send_to_client(clients[cid]) for cid in cids]
+    # [server.send_to_client(clients[cid]) for cid in cids] 看起来和下面重复了
     for cid in cids:
         server.send_to_client(clients[cid])
         # The following sentence!
@@ -252,6 +252,7 @@ def HierFAVG(args):
 
     initilize_parameters = list(clients[0].model.shared_layers.parameters())
     nc = len(initilize_parameters)
+    # 所有客户端参数初始化一致
     for client in clients:
         user_parameters = list(client.model.shared_layers.parameters())
         for i in range(nc):
@@ -280,15 +281,15 @@ def HierFAVG(args):
         # This is randomly assign the clients to edges
         for i in range(args.num_edges):
             # Randomly select clients and assign them
-            selected_cids = np.random.choice(cids, clients_per_edge, replace=False)
-            cids = list(set(cids) - set(selected_cids))
+            selected_cids = np.random.choice(cids, clients_per_edge, replace=False)  # 无放回随机取
+            cids = list(set(cids) - set(selected_cids))  # 无放回，每个edge分到不同的client
             edges.append(Edge(id=i,
                               cids=selected_cids,
                               shared_layers=copy.deepcopy(clients[0].model.shared_layers)))
             [edges[i].client_register(clients[cid]) for cid in selected_cids]
             edges[i].all_trainsample_num = sum(edges[i].sample_registration.values())
             p_clients[i] = [sample / float(edges[i].all_trainsample_num) for sample in
-                            list(edges[i].sample_registration.values())]
+                            list(edges[i].sample_registration.values())]  # 每个客户端的样本数所占比例
             edges[i].refresh_edgeserver()
     # Initialize cloud server
     cloud = Cloud(shared_layers=copy.deepcopy(clients[0].model.shared_layers))
