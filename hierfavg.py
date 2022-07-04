@@ -207,11 +207,10 @@ def initialize_global_nn(args):
     return global_nn
 
 
-def save_parameters(dic_iter, path):
+def save_parameters(dic, path):
     os.chdir(path)
     os.makedirs('results')
-    for k, v in dic_iter:
-        torch.save(v, f"results/{k}.pt")
+    torch.save(dic, "results/params.pt")
 
 
 def HierFAVG(args):
@@ -371,7 +370,7 @@ def HierFAVG(args):
                           num_comm + 1)
     save_path = writer.logdir
     writer.close()
-    save_parameters(cloud.shared_state_dict.items(), save_path)
+    save_parameters(cloud.shared_state_dict, save_path)
     print(f"The final virtual acc is {avg_acc_v}")
 
 
