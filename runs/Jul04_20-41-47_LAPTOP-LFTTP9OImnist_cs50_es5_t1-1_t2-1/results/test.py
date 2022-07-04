@@ -1,35 +1,28 @@
+import os
+
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from torchvision.transforms import transforms
 
-
-class mnist_lenet(nn.Module):
-
-    def __init__(self, input_channels, output_channels):
-        super(mnist_lenet, self).__init__()
-        self.conv1 = nn.Conv2d(input_channels, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, output_channels)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = F.max_pool2d(x, 2)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = self.conv2_drop(x)
-        x = F.max_pool2d(x, 2)
-        x = F.relu(x)
-        x = x.view(-1, x.shape[1] * x.shape[2] * x.shape[3])
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return x
-
+from torchvision import datasets
+from hierfavg import fast_all_clients_test
+from models.mnist_cnn import mnist_lenet
 
 params = torch.load("params.pt")
 model = mnist_lenet(1, 10)
 model.load_state_dict(params)
-print(model.conv1.state_dict())
+model.cuda(0)
+model.train(False)
+kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,)),
+])
+# print(os.path.abspath(os.path.join(os.path.join(os.getcwd(),"../../../"), "data", "mnist")))
+test = datasets.MNIST(os.path.join(os.getcwd(),"../../../", "data", "mnist"), train=False,
+                      download=False, transform=transform)
+v_test_loader = DataLoader(test, batch_size=20 * 50,
+                           shuffle=False, **kwargs)
+correct_all_v, total_all_v = fast_all_clients_test(v_test_loader, model, torch.device('cuda:0'))
+avg_acc_v = correct_all_v / total_all_v
+print(avg_acc_v)
