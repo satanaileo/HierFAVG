@@ -317,9 +317,9 @@ def get_mnist(dataset_root, args):
                             transforms.Normalize((0.1307,), (0.3081,)),
                         ])
     train = datasets.MNIST(os.path.join(dataset_root, 'mnist'), train = True,
-                            download = True, transform = transform)
+                            download = False, transform = transform)
     test =  datasets.MNIST(os.path.join(dataset_root, 'mnist'), train = False,
-                            download = True, transform = transform)
+                            download = False, transform = transform)
     #note: is_shuffle here also is a flag for differentiating train and test
     train_loaders = split_data(train, args, kwargs, is_shuffle = True)
     test_loaders = split_data(test,  args, kwargs, is_shuffle = False)
