@@ -216,13 +216,12 @@ def HierFAVG(args):
         cuda_to_use = torch.device('cuda:0')
     device = cuda_to_use if torch.cuda.is_available() else "cpu"  # 选用训练设备
     print(f'Using device {device}')
-    # FILEOUT = f"{args.dataset}_clients{args.num_clients}_edges{args.num_edges}_" \
-    #           f"t1-{args.num_local_update}_t2-{args.num_edge_aggregation}" \
-    #           f"_model_{args.model}iid{args.iid}edgeiid{args.edgeiid}epoch{args.num_communication}" \
-    #           f"bs{args.batch_size}lr{args.lr}lr_decay_rate{args.lr_decay}" \
-    #           f"lr_decay_epoch{args.lr_decay_epoch}momentum{args.momentum}"
-    #writer = SummaryWriter(comment=FILEOUT)
-    # writer = SummaryWriter()
+    fileout = f"{args.dataset}_cs{args.num_clients}_es{args.num_edges}_" \
+              f"t1-{args.num_local_update}_t2-{args.num_edge_aggregation}"
+    suffix = f"_md_{args.model}iid{args.iid}eiid{args.edgeiid}ep{args.num_communication}" \
+             f"bs{args.batch_size}lr{args.lr}lr_dc_rt{args.lr_decay}" \
+             f"lr_dc_ep{args.lr_decay_epoch}mtm{args.momentum}"
+    writer = SummaryWriter(comment=fileout, filename_suffix=suffix)  # pycharm貌似不能文件名过长
     # Build dataloaders
     train_loaders, test_loaders, v_train_loader, v_test_loader = get_dataloaders(args)
     if args.show_dis:
@@ -341,12 +340,12 @@ def HierFAVG(args):
             # end interation in edges
             all_loss = sum([e_loss * e_sample for e_loss, e_sample in zip(edge_loss, edge_sample)]) / sum(edge_sample)
             avg_acc = correct_all / total_all
-            # writer.add_scalar(f'Partial_Avg_Train_loss',
-            #                   all_loss,
-            #                   num_comm * args.num_edge_aggregation + num_edgeagg + 1)
-            # writer.add_scalar(f'All_Avg_Test_Acc_edgeagg',
-            #                   avg_acc,
-            #                   num_comm * args.num_edge_aggregation + num_edgeagg + 1)
+            writer.add_scalar(f'Partial_Avg_Train_loss',
+                              all_loss,
+                              num_comm * args.num_edge_aggregation + num_edgeagg + 1)
+            writer.add_scalar(f'All_Avg_Test_Acc_edgeagg',
+                              avg_acc,
+                              num_comm * args.num_edge_aggregation + num_edgeagg + 1)
 
         # Now begin the cloud aggregation
         for edge in edges:
@@ -359,11 +358,11 @@ def HierFAVG(args):
         global_nn.train(False)
         correct_all_v, total_all_v = fast_all_clients_test(v_test_loader, global_nn, device)
         avg_acc_v = correct_all_v / total_all_v
-        # writer.add_scalar(f'All_Avg_Test_Acc_cloudagg_Vtest',
-        #                   avg_acc_v,
-        #                   num_comm + 1)
+        writer.add_scalar(f'All_Avg_Test_Acc_cloudagg_Vtest',
+                          avg_acc_v,
+                          num_comm + 1)
 
-    # writer.close()
+    writer.close()
     print(f"The final virtual acc is {avg_acc_v}")
 
 
